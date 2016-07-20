@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Validate environment variables
 : "${UPSTREAM:?Set UPSTREAM using --env}"
-: "${UPSTREAM_PORT?Set UPSTREAM_PORT using --env}"
+: "${UPSTREAM_PORT:?Set UPSTREAM_PORT using --env}"
 PROTOCOL=${PROTOCOL:=HTTP}
 
 # Template an nginx.conf
