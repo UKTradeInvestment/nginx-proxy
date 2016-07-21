@@ -26,6 +26,9 @@ http {
   error_log /var/log/nginx/error.log;
 
   server {
+    location /error/ {
+      root /var/www/static;
+    }
     location / {
       proxy_pass http://${UPSTREAM}:${UPSTREAM_PORT};
       proxy_set_header Host \$host;
