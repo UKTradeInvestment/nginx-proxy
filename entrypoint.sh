@@ -4,6 +4,18 @@ set -euo pipefail
 
 # Validate environment variables
 : "${REDIRECT_DEST:?Set REDIRECT_DEST using --env}"
+: "${SSL_CERT:?Set SSL_CERT using --env}"
+: "${SSL_KEY:?Set SSL_KEY using --env}"
+
+# SSL certificate
+cat <<EOF > /server.crt
+${SSL_CERT}
+EOF
+
+# SSL key
+cat <<EOF > /server.key
+${SSL_KEY}
+EOF
 
 # Template an nginx.conf
 cat <<EOF >/etc/nginx/nginx.conf
@@ -24,6 +36,14 @@ http {
 
   server {
     return 302 ${REDIRECT_DEST}\$request_uri;
+  }
+
+  server {
+    listen 443 ssl;
+    ssl_certificate /server.crt;
+    ssl_certificate_key /server.key;
+    ssl_prefer_server_ciphers on;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
   }
 }
 EOF
