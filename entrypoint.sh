@@ -3,10 +3,7 @@
 set -euo pipefail
 
 # Validate environment variables
-: "${UPSTREAM:?Set UPSTREAM using --env}"
-: "${UPSTREAM_PORT:?Set UPSTREAM_PORT using --env}"
-: "${ERROR_PAGE:?Set ERROR_PAGE using --env}"
-PROTOCOL=${PROTOCOL:=HTTP}
+: "${REDIRECT_DEST:?Set REDIRECT_DEST using --env}"
 
 # Template an nginx.conf
 cat <<EOF >/etc/nginx/nginx.conf
@@ -18,7 +15,6 @@ events {
 }
 EOF
 
-if [ "$PROTOCOL" = "HTTP" ]; then
 cat <<EOF >>/etc/nginx/nginx.conf
 
 http {
@@ -27,31 +23,12 @@ http {
   error_log /var/log/nginx/error.log;
 
   server {
-    location / {
-      proxy_pass http://${UPSTREAM}:${UPSTREAM_PORT};
-      proxy_set_header Host \$host;
-      proxy_set_header X-Forwarded-For \$remote_addr;
-      proxy_intercept_errors on;
-      error_page 400 403 404 405 414 416 500 501 502 503 504 ${ERROR_PAGE};
-    }
+    return 302 ${REDIRECT_DEST}\$request_uri;
   }
 }
 EOF
-elif [ "$PROTOCOL" == "TCP" ]; then
-cat <<EOF >>/etc/nginx/nginx.conf
 
-stream {
-  server {
-    listen ${UPSTREAM_PORT};
-    proxy_pass ${UPSTREAM}:${UPSTREAM_PORT};
-  }
-}
-EOF
-else
-echo "Unknown PROTOCOL. Valid values are HTTP or TCP."
-fi
-
-echo "Proxy ${PROTOCOL} for ${UPSTREAM}:${UPSTREAM_PORT}"
+echo "Redirecting to ${REDIRECT_DEST}"
 
 # Launch nginx in the foreground
 /usr/sbin/nginx -g "daemon off;"
