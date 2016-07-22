@@ -32,16 +32,17 @@ cat <<EOF >>/etc/nginx/nginx.conf
 
 http {
   server_tokens off;
-  server_name ${HOST} www.${HOST}
   access_log /var/log/nginx/access.log;
   error_log /var/log/nginx/error.log;
 
   server {
+    server_name ${HOST} www.${HOST};
     return 302 https://\$host\$request_uri;
   }
 
   server {
     listen 443 ssl;
+    server_name ${HOST} www.${HOST};
     ssl_certificate /server.crt;
     ssl_certificate_key /server.key;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
