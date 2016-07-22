@@ -4,6 +4,7 @@ set -euo pipefail
 
 # Validate environment variables
 : "${REDIRECT_DEST:?Set REDIRECT_DEST using --env}"
+: "${HOST:?Set HOST using --env}"
 : "${SSL_CERT:?Set SSL_CERT using --env}"
 : "${SSL_KEY:?Set SSL_KEY using --env}"
 
@@ -31,19 +32,25 @@ cat <<EOF >>/etc/nginx/nginx.conf
 
 http {
   server_tokens off;
+  server_name ${HOST} www.${HOST}
   access_log /var/log/nginx/access.log;
   error_log /var/log/nginx/error.log;
 
   server {
-    return 302 ${REDIRECT_DEST}\$request_uri;
+    return 302 https://\$host\$request_uri;
   }
 
   server {
     listen 443 ssl;
     ssl_certificate /server.crt;
     ssl_certificate_key /server.key;
-    ssl_prefer_server_ciphers on;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_prefer_server_ciphers on;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
     return 302 ${REDIRECT_DEST}\$request_uri;
   }
 }
