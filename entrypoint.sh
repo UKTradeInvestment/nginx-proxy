@@ -37,7 +37,7 @@ http {
 
   server {
     server_name ${HOST} www.${HOST};
-    return 302 https://${REDIRECT_DEST}\$request_uri;
+    return 302 ${REDIRECT_DEST}\$request_uri;
   }
 
   server {
