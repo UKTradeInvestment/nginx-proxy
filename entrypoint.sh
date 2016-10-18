@@ -47,7 +47,7 @@ http {
       if (\$http_x_forwarded_proto = "http") {
         return 302 https://${VHOST}\$request_uri;
       }
-      try_files $uri @app;
+      try_files \$uri @app;
     }
 
     location @app {
