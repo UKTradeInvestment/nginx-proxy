@@ -29,10 +29,10 @@ http {
     server_name ${VHOST} www.${VHOST};
     root ${VHOST_ROOT};
 
-    proxy_set_header Host $http_host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host \$http_host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
 
     set_real_ip_from 0.0.0.0/0;
     real_ip_header X-Forwarded-For;
