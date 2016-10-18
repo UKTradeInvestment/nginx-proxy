@@ -3,20 +3,10 @@
 set -euo pipefail
 
 # Validate environment variables
-: "${REDIRECT_DEST:?Set REDIRECT_DEST using --env}"
-: "${HOST:?Set HOST using --env}"
-: "${SSL_CERT:?Set SSL_CERT using --env}"
-: "${SSL_KEY:?Set SSL_KEY using --env}"
-
-# SSL certificate
-cat <<EOF > /server.crt
-${SSL_CERT}
-EOF
-
-# SSL key
-cat <<EOF > /server.key
-${SSL_KEY}
-EOF
+: "${VHOST:?Set VHOST using --env}"
+: "${VHOST_ROOT:?Set VHOST_ROOT using --env}"
+: "${BACKEND_HOST:?Set BACKEND_HOST using --env}"
+: "${BACKEND_PORT:?Set BACKEND_PORT using --env}"
 
 # Template an nginx.conf
 cat <<EOF >/etc/nginx/nginx.conf
@@ -36,28 +26,37 @@ http {
   error_log /var/log/nginx/error.log;
 
   server {
-    server_name ${HOST} www.${HOST};
-    return 302 ${REDIRECT_DEST}\$request_uri;
-  }
+    server_name ${VHOST} www.${VHOST};
+    root ${VHOST_ROOT};
 
-  server {
-    listen 443 ssl;
-    server_name ${HOST} www.${HOST};
-    ssl_certificate /server.crt;
-    ssl_certificate_key /server.key;
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-    ssl_prefer_server_ciphers on;
-    ssl_stapling on;
-    ssl_stapling_verify on;
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    return 302 ${REDIRECT_DEST}\$request_uri;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    set_real_ip_from 0.0.0.0/0;
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+
+    gzip on;
+    gzip_proxied any;
+    gzip_vary on;
+    gzip_types *;
+
+    location / {
+      if ($http_x_forwarded_proto = "http") {
+        return 302 https://${VHOST}\$request_uri;
+      }
+      try_files $uri @app;
+    }
+
+    location @app {
+      expires -1;
+      proxy_pass http://${BACKEND_HOST}:${BACKEND_PORT};
+    }
   }
 }
 EOF
-
-echo "Redirecting to ${REDIRECT_DEST}"
 
 # Launch nginx in the foreground
 /usr/sbin/nginx -g "daemon off;"
