@@ -44,7 +44,7 @@ http {
     gzip_types *;
 
     location / {
-      if ($http_x_forwarded_proto = "http") {
+      if (\$http_x_forwarded_proto = "http") {
         return 302 https://${VHOST}\$request_uri;
       }
       try_files $uri @app;
