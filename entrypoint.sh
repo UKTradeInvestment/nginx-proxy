@@ -26,7 +26,7 @@ http {
   error_log /var/log/nginx/error.log;
 
   server {
-    server_name ${VHOST} www.${VHOST};
+    server_name _ ${VHOST} www.${VHOST};
     root ${VHOST_ROOT};
 
     proxy_set_header Host \$http_host;
@@ -45,7 +45,7 @@ http {
 
     location / {
       if (\$http_x_forwarded_proto = "http") {
-        return 302 https://${VHOST}\$request_uri;
+        return 302 https://\$http_host\$request_uri;
       }
       try_files \$uri @app;
     }
